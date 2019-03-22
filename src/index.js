@@ -1,20 +1,6 @@
-'use strict'
+const NOOP = () => {}
 
-/**
- * Module dependencies.
- */
-
-const redis = require('redis')
-const parser = require('parse-redis-url')
-
-/**
- * Module constants.
- */
-
-const parse = parser(redis).parse
-const noop = () => {}
-
-class RedisStore {
+module.exports = class CachemanRedis {
   /**
    * RedisStore constructor.
    *
@@ -22,37 +8,11 @@ class RedisStore {
    * @api public
    */
 
-  constructor(options = {}) {
-    if ('string' === typeof options) {
-      options = parse(options)
-    }
-
-    const { port, host, client, setex, password, database, prefix } = options
-
-    if ('function' === typeof setex) {
-      this.client = options
-    } else if (client) {
-      this.client = client
-    } else if (!port && !host) {
-      this.client = redis.createClient()
-    } else {
-      const opts = Object.assign({}, options, { prefix: null })
-      this.client = redis.createClient(port, host, opts)
-    }
-
-    if (password) {
-      this.client.auth(password, (err) => {
-        if (err) throw err
-      })
-    }
-
-    if (database) {
-      this.client.select(database, (err) => {
-        if (err) throw err
-      })
-    }
-
-    this.prefix = prefix || 'cacheman:'
+  constructor(client, {
+    prefix = ''
+  } = {}) {
+    this.client = client
+    this.prefix = prefix
   }
 
   /**
@@ -63,7 +23,7 @@ class RedisStore {
    * @api public
    */
 
-  get(key, fn = noop) {
+  get(key, fn = NOOP) {
     const k = `${this.prefix}${key}`
     this.client.get(k, (err, data) => {
       if (err) return fn(err)
@@ -87,7 +47,7 @@ class RedisStore {
    * @api public
    */
 
-  set(key, val, ttl, fn = noop) {
+  set(key, val, ttl, fn = NOOP) {
     const k = `${this.prefix}${key}`
 
     if ('function' === typeof ttl) {
@@ -121,7 +81,7 @@ class RedisStore {
    * @api public
    */
 
-  del(key, fn = noop) {
+  del(key, fn = NOOP) {
     this.client.del(`${this.prefix}${key}`, fn)
   }
 
@@ -132,7 +92,7 @@ class RedisStore {
    * @api public
    */
 
-  clear(fn = noop) {
+  clear(fn = NOOP) {
     this.client.keys(`${this.prefix}*`, (err, data) => {
       if (err) return fn(err)
       let count = data.length
@@ -151,5 +111,3 @@ class RedisStore {
     })
   }
 }
-
-module.exports = RedisStore
