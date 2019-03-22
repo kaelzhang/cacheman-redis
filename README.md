@@ -6,7 +6,7 @@
 
 Redis standalone caching library for Node.JS and also cache engine for [cacheman](https://github.com/cayasso/cacheman).
 
-
+This fork removes peer dependencies `redis` and only supports to create a `CachemanRedis` with a redis client
 
 ## Install
 
@@ -18,37 +18,35 @@ $ npm i @ostai/cacheman-redis
 
 ```js
 const CachemanRedis = require('@ostai/cacheman-redis')
-var cache = new CachemanRedis()
+const Redis = require('ioredis')
+const cache = new CachemanRedis(new Redis())
 
 // set the value
-cache.set('my key', { foo: 'bar' }, function (error) {
+cache.set('key', {foo: 'bar'}, err => {
+  if (err) {
+    throw err
+  }
 
-  if (error) throw error
-
-  // get the value
-  cache.get('my key', function (error, value) {
-
-    if (error) throw error
-
-    console.log(value) //-> {foo:"bar"}
-
-    // delete entry
-    cache.del('my key', function (error){
-
-      if (error) throw error
-
-      console.log('value deleted')
-    })
-
-  })
+  console.log('succeeded')
 })
+
+// But for most cases,
+// CachemanRedis is used as an engine of Cacheman
+const Cacheman = require('cacheman')
+const man = new Cacheman('prefix', {
+  engine: cache
+})
+
+const value = await man.get('key')
 ```
 
 ## API
 
-### CachemanRedis(client)
+### CachemanRedis(client, options?)
 
 - **client** `RedisClient` redis `client` instance
+- **options** `?Object`
+  - **prefix** `?string=''` key prefix
 
 Create a `CachemanRedis` instance.
 
@@ -57,7 +55,7 @@ const Redis = require('ioredis')
 const cache = new CachemanRedis(new Redis())
 ```
 
-### cache.set(key, value, [ttl, [fn]])
+### cache.set(key, value, ttl?, callback?)
 
 Stores or updates a value.
 
@@ -72,40 +70,40 @@ Or add a TTL(Time To Live) in seconds like this:
 
 ```javascript
 // key will expire in 60 seconds
-cache.set('foo', { a: 'bar' }, 60, function (err, value) {
+cache.set('foo', {a: 'bar'}, 60, (err, value) => {
   if (err) throw err
   console.log(value) //-> {a:'bar'}
 })
 ```
 
-### cache.get(key, fn)
+### cache.get(key, callback?)
 
 Retrieves a value for a given key, if there is no value for the given key a null value will be returned.
 
-```javascript
-cache.get(function (err, value) {
+```js
+cache.get(key, (err, value) => {
   if (err) throw err
   console.log(value)
 })
 ```
 
-### cache.del(key, [fn])
+### cache.del(key, callback?)
 
 Deletes a key out of the cache.
 
 ```javascript
-cache.del('foo', function (err) {
+cache.del('foo', err => {
   if (err) throw err
   // foo was deleted
 })
 ```
 
-### cache.clear([fn])
+### cache.clear(callback?)
 
 Clear the cache entirely, throwing away all values.
 
 ```javascript
-cache.clear(function (err) {
+cache.clear(err => {
   if (err) throw err
   // cache is now clear
 })
