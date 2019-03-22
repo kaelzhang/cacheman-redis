@@ -1,12 +1,15 @@
 {
   "name": "@ostai/cacheman-redis",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Redis standalone caching library for Node.JS and also cache engine for Cacheman",
   "author": "Jonathan Brumley <cayasso@gmail.com>",
   "main": "./src/index",
   "scripts": {
     "test": "mocha --exit"
   },
+  "files": [
+    "src/"
+  ],
   "repository": {
     "type": "git",
     "url": "git://github.com/kaelzhang/cacheman-redis.git"
